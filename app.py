@@ -716,9 +716,9 @@ initialize_session_state()
 st.markdown(
     """
     <style>
-    /* Phone-first layout: make the app feel like a mobile product, not a desktop dashboard. */
+    /* Phone-first layout with left navigation. */
     .block-container {
-        max-width: 760px;
+        max-width: 820px;
         padding-top: 1rem;
         padding-left: 1rem;
         padding-right: 1rem;
@@ -726,7 +726,7 @@ st.markdown(
     }
 
     h1 {
-        font-size: clamp(2rem, 8vw, 3rem) !important;
+        font-size: clamp(1.9rem, 7vw, 2.8rem) !important;
         line-height: 1.05 !important;
         letter-spacing: -0.04em;
         margin-bottom: 0.25rem !important;
@@ -740,46 +740,36 @@ st.markdown(
         font-size: 1rem;
     }
 
-    .mobile-hero {
-        background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 100%);
-        border: 1px solid rgba(15, 23, 42, 0.10);
-        border-radius: 22px;
-        padding: 18px 16px;
-        margin: 10px 0 14px 0;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    /* Clean sidebar navigation. */
+    section[data-testid="stSidebar"] {
+        background: #f8fafc;
+        border-right: 1px solid rgba(15, 23, 42, 0.08);
     }
 
-    .mobile-hero-title {
-        font-size: clamp(1.25rem, 5.6vw, 1.8rem);
-        font-weight: 900;
-        color: #0f172a;
-        line-height: 1.08;
-        margin-bottom: 8px;
-        letter-spacing: -0.035em;
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 1.4rem;
     }
 
-    .mobile-hero-text {
-        color: #334155;
-        font-size: 0.98rem;
-        line-height: 1.45;
-        font-weight: 650;
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        font-size: 1.05rem !important;
+        margin-bottom: 0.3rem !important;
     }
 
-    .mobile-chip-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 12px;
-    }
-
-    .mobile-chip {
-        background: rgba(255,255,255,0.78);
+    div[role="radiogroup"] label {
         border: 1px solid rgba(15,23,42,0.10);
-        color: #0f172a;
-        border-radius: 999px;
-        padding: 7px 10px;
-        font-size: 0.78rem;
-        font-weight: 800;
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin: 6px 0;
+        background: #ffffff;
+        min-height: 44px;
+        box-shadow: 0 3px 10px rgba(15,23,42,0.04);
+    }
+
+    div[role="radiogroup"] label:hover {
+        border-color: rgba(37,99,235,0.35);
+        background: #eff6ff;
     }
 
     /* Bigger tap targets for iPhone users. */
@@ -806,20 +796,6 @@ st.markdown(
         font-size: 16px !important; /* Prevents iPhone Safari zoom on focus. */
     }
 
-    /* Make tabs easier to swipe/fit on small screens. */
-    div[data-testid="stTabs"] button {
-        min-height: 42px;
-        padding-left: 10px;
-        padding-right: 10px;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    div[data-testid="stTabs"] [role="tablist"] {
-        gap: 4px;
-        overflow-x: auto;
-    }
-
     .stAlert {
         border-radius: 16px;
     }
@@ -829,11 +805,6 @@ st.markdown(
             padding-left: 0.85rem;
             padding-right: 0.85rem;
             padding-top: 0.75rem;
-        }
-
-        .mobile-hero {
-            border-radius: 18px;
-            padding: 15px 14px;
         }
 
         div[data-testid="column"] {
@@ -848,28 +819,6 @@ st.markdown(
 
 st.title(f"💬 {APP_NAME}")
 st.caption("Think before you text.")
-
-st.markdown(
-    """
-    <div class="mobile-hero">
-        <div class="mobile-hero-title">AI relationship coaching made for your phone.</div>
-        <div class="mobile-hero-text">
-            Calm down after arguments, rewrite difficult texts, and prepare for hard conversations before you hit send.
-        </div>
-        <div class="mobile-chip-row">
-            <span class="mobile-chip">Rewrite texts</span>
-            <span class="mobile-chip">Conflict help</span>
-            <span class="mobile-chip">Boundaries</span>
-            <span class="mobile-chip">Weekly check-ins</span>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Sidebar removed for a cleaner landing page.
-st.session_state.current_modality = MODALITY_NAME
-
 
 # -----------------------------
 # Safety Acknowledgment
@@ -898,9 +847,31 @@ if not st.session_state.safety_acknowledged:
 
 # Keep the AI status fresh without requiring the user to click anything.
 st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
+
+# -----------------------------
+# Left Sidebar Navigation
+# -----------------------------
+
+st.session_state.current_modality = MODALITY_NAME
+
+with st.sidebar:
+    st.markdown("### RelationshipPath AI")
+    page = st.radio(
+        "Menu",
+        [
+            "Coach Chat",
+            "Say It For Me",
+            "Check-In",
+            "Journal",
+            "About/Safety",
+        ],
+        label_visibility="collapsed",
+    )
+
+# AI status stays on the main page as a simple light box.
 render_ai_status_light()
 
-# Compact main-page session controls, replacing the old sidebar buttons.
+# Compact main-page session controls.
 with st.expander("Session controls", expanded=False):
     col_clear_chat, col_clear_journal = st.columns(2)
     with col_clear_chat:
@@ -914,24 +885,11 @@ with st.expander("Session controls", expanded=False):
 
 
 # -----------------------------
-# Main Tabs
+# Page 1: Coach Chat
 # -----------------------------
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Coach Chat",
-    "Rewrite Message",
-    "Weekly Check-In",
-    "Journal",
-    "About / Safety"
-])
-
-
-# -----------------------------
-# Tab 1: Coach Chat
-# -----------------------------
-
-with tab1:
-    st.header("Relationship Coach Chat")
+if page == "Coach Chat":
+    st.header("Coach Chat")
 
     st.markdown(
         """
@@ -980,11 +938,11 @@ with tab1:
 
 
 # -----------------------------
-# Tab 2: Rewrite Message
+# Page 2: Say It For Me
 # -----------------------------
 
-with tab2:
-    st.header("Help Me Say This Better")
+elif page == "Say It For Me":
+    st.header("Say It For Me")
 
     st.markdown(
         """
@@ -1005,13 +963,13 @@ with tab2:
         horizontal=True
     )
 
-    if st.button("Rewrite Message"):
+    if st.button("Say It For Me"):
         rewritten = rewrite_message(original_message, rewrite_style)
-        st.subheader("Rewritten Version")
+        st.subheader("Suggested Message")
         st.markdown(rewritten)
 
         st.download_button(
-            label="Download rewritten message",
+            label="Download suggested message",
             data=rewritten,
             file_name="relationship_message_rewrite.txt",
             mime="text/plain"
@@ -1019,15 +977,15 @@ with tab2:
 
 
 # -----------------------------
-# Tab 3: Weekly Check-In
+# Page 3: Check-In
 # -----------------------------
 
-with tab3:
-    st.header("Weekly Relationship Check-In")
+elif page == "Check-In":
+    st.header("Check-In")
 
     st.markdown(
         """
-        This is a simple weekly reflection tool. It does not diagnose your relationship.
+        A quick relationship check-in. It does not diagnose your relationship.
         It helps you notice patterns and prepare one healthy next step.
         """
     )
@@ -1048,7 +1006,7 @@ with tab3:
         placeholder="Example: We argued twice, but we also had one good conversation..."
     )
 
-    if st.button("Generate Weekly Summary"):
+    if st.button("Generate Check-In"):
         summary = create_weekly_summary(
             connection_score,
             communication_score,
@@ -1060,19 +1018,19 @@ with tab3:
         st.markdown(summary)
 
         st.download_button(
-            label="Download weekly summary",
+            label="Download check-in",
             data=summary,
-            file_name="weekly_relationship_checkin.txt",
+            file_name="relationship_checkin.txt",
             mime="text/plain"
         )
 
 
 # -----------------------------
-# Tab 4: Journal
+# Page 4: Journal
 # -----------------------------
 
-with tab4:
-    st.header("Relationship Journal")
+elif page == "Journal":
+    st.header("Journal")
 
     st.markdown(
         """
@@ -1131,11 +1089,11 @@ with tab4:
 
 
 # -----------------------------
-# Tab 5: About / Safety
+# Page 5: About/Safety
 # -----------------------------
 
-with tab5:
-    st.header("About RelationshipPath AI")
+elif page == "About/Safety":
+    st.header("About/Safety")
 
     st.markdown(
         """
@@ -1147,7 +1105,7 @@ with tab5:
         - prepare for conversations
         - reflect on relationship patterns
         - set healthier boundaries
-        - do weekly relationship check-ins
+        - do relationship check-ins
 
         It does **not** provide:
         - licensed therapy
