@@ -819,21 +819,39 @@ st.markdown(
         transform: translateY(1px);
     }
 
-    /* Streamlit widget navigation: smoother than link navigation because it avoids full browser reloads. */
+    /* Streamlit widget navigation: smoother than link navigation because it avoids full browser reloads.
+       Force the four choices into ONE horizontal row on phones instead of Streamlit stacking them. */
+    div[data-testid="stRadio"] {
+        width: 100% !important;
+    }
+
+    div[data-testid="stRadio"] > label {
+        display: none !important;
+    }
+
     div[data-testid="stRadio"] div[role="radiogroup"] {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
-        gap: 0.42rem;
-        width: 100%;
-        margin: 0.75rem 0 0.55rem 0;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        justify-content: space-between !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0.75rem 0 0.55rem 0 !important;
+        overflow: hidden !important;
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        min-height: 54px;
-        padding: 0.55rem 0.35rem !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: 25% !important;
+        width: auto !important;
+        min-height: 54px !important;
+        padding: 0.55rem 0.22rem !important;
         border-radius: 14px !important;
         border: 1px solid rgba(148, 163, 184, 0.38) !important;
         background: rgba(255, 255, 255, 0.08) !important;
@@ -841,7 +859,8 @@ st.markdown(
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
         user-select: none;
         -webkit-tap-highlight-color: transparent;
-        text-align: center;
+        text-align: center !important;
+        margin: 0 !important;
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
@@ -856,17 +875,23 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child {
+    div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child,
+    div[data-testid="stRadio"] div[role="radiogroup"] label input {
         display: none !important;
     }
 
-    div[data-testid="stRadio"] div[role="radiogroup"] label p {
-        font-size: clamp(0.72rem, 2.85vw, 1rem) !important;
+    div[data-testid="stRadio"] div[role="radiogroup"] label p,
+    div[data-testid="stRadio"] div[role="radiogroup"] label span {
+        font-size: clamp(0.58rem, 2.55vw, 0.95rem) !important;
         font-weight: 950 !important;
-        line-height: 1.05 !important;
-        letter-spacing: -0.02em !important;
+        line-height: 1.03 !important;
+        letter-spacing: -0.035em !important;
         text-align: center !important;
+        white-space: normal !important;
         overflow-wrap: anywhere !important;
+        word-break: normal !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .ai-status-one-line {
@@ -942,18 +967,26 @@ st.markdown(
         }
 
         div[data-testid="stRadio"] div[role="radiogroup"] {
-            gap: 0.28rem;
-            margin-top: 0.55rem;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 0.22rem !important;
+            margin-top: 0.55rem !important;
+            overflow: hidden !important;
         }
 
         div[data-testid="stRadio"] div[role="radiogroup"] label {
-            min-height: 48px;
-            border-radius: 13px !important;
-            padding: 0.42rem 0.18rem !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            max-width: 25% !important;
+            min-height: 46px !important;
+            border-radius: 12px !important;
+            padding: 0.36rem 0.08rem !important;
         }
 
-        div[data-testid="stRadio"] div[role="radiogroup"] label p {
-            font-size: clamp(0.62rem, 2.8vw, 0.82rem) !important;
+        div[data-testid="stRadio"] div[role="radiogroup"] label p,
+        div[data-testid="stRadio"] div[role="radiogroup"] label span {
+            font-size: clamp(0.54rem, 2.45vw, 0.78rem) !important;
+            line-height: 1.02 !important;
         }
     }
     </style>
