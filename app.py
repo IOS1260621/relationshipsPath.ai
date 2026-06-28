@@ -488,24 +488,21 @@ Recent chat context:
 Current user message:
 {user_input}
 
-Create a response with this structure:
-### What I hear
-Name the likely feeling without overclaiming.
+Respond like a calm, supportive relationship coach in a natural conversation.
+Do NOT use a fixed template or headings like "What I hear", "Slow it down", "Say it for me", or "Next step".
 
-### Slow it down
-Separate facts, feelings, and needs in natural language.
+Write 2 to 4 short phone-friendly paragraphs. Sound human, warm, and direct.
+Acknowledge the user's feelings without overclaiming. Help them slow down, see the situation more clearly, and choose a healthier response.
 
-### Say it for me
-Give one copy-ready message the user could send.
-
-### Next step
-Give one realistic next step. Internal suggestion you may use if helpful: {ai_next_step}
+If useful, include one copy-ready message using natural wording like: "You could say:"
+End with one simple next move. Internal next-step suggestion you may use if helpful: {ai_next_step}
 
 Important:
 - Do not show formulas.
 - Do not show scores.
 - Do not mention clarity score, intensity score, structure points, trigger hits, or AI formula check.
-- Keep it practical, human, and not clinical.
+- Do not sound clinical or robotic.
+- Do not force a section-by-section format.
 """
 
     try:
@@ -541,29 +538,17 @@ Important:
         ai_next_step = ai_next_step.replace("Formula-based next step: ", "").strip()
 
         return f"""
-⚠️ **AI fallback mode:** OpenAI did not respond, so the app used its built-in rule-based coach.
+⚠️ **AI fallback mode:** OpenAI did not respond, so the app used its built-in coach.
+
+It sounds like you may be feeling **{emotion}**. {situation_focus}
+
+Try to keep this about one specific moment, one feeling, and one clear request. Avoid stacking every past argument into the same message.
+
+You could say: "{scripted_message}"
+
+For now, the next move is simple: {ai_next_step}
 
 Technical note: `{error}`
-
-It sounds like you may be feeling **{emotion}**.
-
-### Focus for this session
-{situation_focus}
-
-### What happened
-{happened_line}
-
-### What you felt
-{felt_line}
-
-### What you need
-{need_line}
-
-### Say it for me
-"{scripted_message}"
-
-### Next step
-{ai_next_step}
 """
 
 
@@ -835,7 +820,8 @@ st.markdown(
         flex-wrap: nowrap !important;
         align-items: stretch !important;
         justify-content: space-between !important;
-        gap: 0.35rem !important;
+
+        gap: 0.25rem !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0.75rem 0 0.55rem 0 !important;
@@ -850,8 +836,9 @@ st.markdown(
         min-width: 0 !important;
         max-width: 25% !important;
         width: auto !important;
-        min-height: 54px !important;
-        padding: 0.55rem 0.22rem !important;
+
+        min-height: 68px !important;
+        padding: 0.7rem 0.18rem !important;
         border-radius: 14px !important;
         border: 1px solid rgba(148, 163, 184, 0.38) !important;
         background: rgba(255, 255, 255, 0.08) !important;
@@ -882,9 +869,10 @@ st.markdown(
 
     div[data-testid="stRadio"] div[role="radiogroup"] label p,
     div[data-testid="stRadio"] div[role="radiogroup"] label span {
-        font-size: clamp(0.58rem, 2.55vw, 0.95rem) !important;
-        font-weight: 950 !important;
-        line-height: 1.03 !important;
+
+        font-size: clamp(0.76rem, 3.2vw, 1.05rem) !important;
+        font-weight: 1000 !important;
+        line-height: 1.08 !important;
         letter-spacing: -0.035em !important;
         text-align: center !important;
         white-space: normal !important;
@@ -969,7 +957,8 @@ st.markdown(
         div[data-testid="stRadio"] div[role="radiogroup"] {
             flex-direction: row !important;
             flex-wrap: nowrap !important;
-            gap: 0.22rem !important;
+
+            gap: 0.18rem !important;
             margin-top: 0.55rem !important;
             overflow: hidden !important;
         }
@@ -978,15 +967,17 @@ st.markdown(
             flex: 1 1 0 !important;
             min-width: 0 !important;
             max-width: 25% !important;
-            min-height: 46px !important;
-            border-radius: 12px !important;
-            padding: 0.36rem 0.08rem !important;
+
+            min-height: 62px !important;
+            border-radius: 13px !important;
+            padding: 0.52rem 0.08rem !important;
         }
 
         div[data-testid="stRadio"] div[role="radiogroup"] label p,
         div[data-testid="stRadio"] div[role="radiogroup"] label span {
-            font-size: clamp(0.54rem, 2.45vw, 0.78rem) !important;
-            line-height: 1.02 !important;
+
+            font-size: clamp(0.68rem, 3.05vw, 0.9rem) !important;
+            line-height: 1.05 !important;
         }
     }
     </style>
@@ -1071,8 +1062,7 @@ if page == "Coach Chat":
 
     st.markdown(
         """
-        Type what happened in one place. The AI will help you slow it down,
-        rewrite the message, and choose one healthier next step.
+        Type what happened like you are texting a coach. The AI will answer in a more natural conversation style and help you decide what to say next.
         """
     )
 
