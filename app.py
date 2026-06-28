@@ -99,6 +99,35 @@ def initialize_session_state():
         st.session_state.current_modality = MODALITY_NAME
 
 
+def get_query_param_value(name, default=""):
+    """Safely read one query parameter value across Streamlit versions."""
+    try:
+        value = st.query_params.get(name, default)
+    except Exception:
+        return default
+
+    if isinstance(value, list):
+        return value[0] if value else default
+
+    return value if value is not None else default
+
+
+def remember_safety_acknowledgment_from_url():
+    """Keep the safety gate passed when top-nav links reload the page on mobile."""
+    if get_query_param_value("ack", "") == "1":
+        st.session_state.safety_acknowledged = True
+
+
+def mark_safety_acknowledged():
+    st.session_state.safety_acknowledged = True
+    try:
+        current_page = get_query_param_value("page", "coach") or "coach"
+        st.query_params["ack"] = "1"
+        st.query_params["page"] = current_page
+    except Exception:
+        pass
+
+
 def append_capped_state_list(state_key, item, max_items):
     st.session_state[state_key].append(item)
     if len(st.session_state[state_key]) > max_items:
@@ -679,6 +708,7 @@ def export_journal_as_json():
 # -----------------------------
 
 initialize_session_state()
+remember_safety_acknowledgment_from_url()
 
 # -----------------------------
 # Phone-first visual polish
@@ -687,6 +717,31 @@ initialize_session_state()
 st.markdown(
     """
     <style>
+    /* Hide Streamlit's top toolbar/header/menu so it does not cover the app title on phones. */
+    header,
+    header[data-testid="stHeader"],
+    [data-testid="stHeader"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    .stAppHeader,
+    .stDeployButton,
+    #MainMenu,
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .stApp,
+    [data-testid="stAppViewContainer"] {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+
     /* Clean phone-first layout with no sidebar. */
     section[data-testid="stSidebar"],
     button[data-testid="collapsedControl"],
@@ -864,7 +919,7 @@ if not st.session_state.safety_acknowledged:
     acknowledge = st.checkbox("I understand this is AI relationship coaching, not therapy or emergency support.")
 
     if acknowledge:
-        st.session_state.safety_acknowledged = True
+        mark_safety_acknowledged()
         st.rerun()
 
     st.stop()
@@ -885,13 +940,7 @@ NAV_OPTIONS = {
     "journal": "Journal",
 }
 
-try:
-    requested_page = st.query_params.get("page", "coach")
-except Exception:
-    requested_page = "coach"
-
-if isinstance(requested_page, list):
-    requested_page = requested_page[0] if requested_page else "coach"
+requested_page = get_query_param_value("page", "coach")
 
 if requested_page not in NAV_OPTIONS:
     requested_page = "coach"
@@ -904,7 +953,7 @@ for slug, label in NAV_OPTIONS.items():
     safe_slug = html.escape(slug)
     safe_label = html.escape(label)
     nav_html_parts.append(
-        f'<a class="top-nav-button{active_class}" href="?page={safe_slug}">{safe_label}</a>'
+        f'<a class="top-nav-button{active_class}" href="?page={safe_slug}&ack=1">{safe_label}</a>'
     )
 nav_html_parts.append('</div>')
 st.markdown("".join(nav_html_parts), unsafe_allow_html=True)
