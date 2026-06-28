@@ -740,10 +740,10 @@ st.markdown(
     }
 
     .block-container {
-        max-width: 760px;
+        max-width: 1120px;
         padding-top: 0.75rem;
-        padding-left: 0.85rem;
-        padding-right: 0.85rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
         padding-bottom: 6rem;
     }
 
@@ -804,10 +804,11 @@ st.markdown(
         transform: translateY(1px);
     }
 
-    /* Streamlit widget navigation: smoother than link navigation because it avoids full browser reloads.
-       Force the four choices into ONE horizontal row on phones instead of Streamlit stacking them. */
+    /* Streamlit widget navigation: four large card buttons spread evenly across the page. */
     div[data-testid="stRadio"] {
         width: 100% !important;
+        margin-top: 1.35rem !important;
+        margin-bottom: 1rem !important;
     }
 
     div[data-testid="stRadio"] > label {
@@ -818,14 +819,12 @@ st.markdown(
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        align-items: stretch !important;
-        justify-content: space-between !important;
-
-        gap: 0.25rem !important;
+        gap: 0.75rem !important;
         width: 100% !important;
         max-width: 100% !important;
-        margin: 0.75rem 0 0.55rem 0 !important;
-        overflow: hidden !important;
+        margin: 0 !important;
+        align-items: stretch !important;
+        justify-content: space-between !important;
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label {
@@ -834,27 +833,31 @@ st.markdown(
         justify-content: center !important;
         flex: 1 1 0 !important;
         min-width: 0 !important;
-        max-width: 25% !important;
         width: auto !important;
-
-        min-height: 68px !important;
-        padding: 0.7rem 0.18rem !important;
-        border-radius: 14px !important;
-        border: 1px solid rgba(148, 163, 184, 0.38) !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-        color: inherit !important;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
+        min-height: 86px !important;
+        padding: 0.95rem 0.55rem !important;
+        border-radius: 17px !important;
+        border: 1px solid rgba(203, 213, 225, 0.95) !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        color: #2f3140 !important;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08) !important;
+        user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
         text-align: center !important;
         margin: 0 !important;
+        transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease !important;
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
         background: #ef4444 !important;
         border-color: #ef4444 !important;
         color: #ffffff !important;
-        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.28);
+        box-shadow: 0 16px 34px rgba(239, 68, 68, 0.26) !important;
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) p,
@@ -863,16 +866,22 @@ st.markdown(
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child,
-    div[data-testid="stRadio"] div[role="radiogroup"] label input {
+    div[data-testid="stRadio"] div[role="radiogroup"] label input,
+    div[data-testid="stRadio"] div[role="radiogroup"] label svg {
         display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     div[data-testid="stRadio"] div[role="radiogroup"] label p,
     div[data-testid="stRadio"] div[role="radiogroup"] label span {
-
-        font-size: clamp(0.76rem, 3.2vw, 1.05rem) !important;
+        color: #2f3140 !important;
+        font-size: clamp(0.96rem, 1.45vw, 1.18rem) !important;
         font-weight: 1000 !important;
-        line-height: 1.08 !important;
+        line-height: 1.05 !important;
         letter-spacing: -0.035em !important;
         text-align: center !important;
         white-space: normal !important;
@@ -955,29 +964,26 @@ st.markdown(
         }
 
         div[data-testid="stRadio"] div[role="radiogroup"] {
+            display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
-
-            gap: 0.18rem !important;
-            margin-top: 0.55rem !important;
-            overflow: hidden !important;
+            gap: 0.34rem !important;
+            margin-top: 0 !important;
+            overflow: visible !important;
         }
 
         div[data-testid="stRadio"] div[role="radiogroup"] label {
-            flex: 1 1 0 !important;
-            min-width: 0 !important;
-            max-width: 25% !important;
-
-            min-height: 62px !important;
-            border-radius: 13px !important;
+            min-height: 58px !important;
+            border-radius: 14px !important;
             padding: 0.52rem 0.08rem !important;
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08) !important;
         }
 
         div[data-testid="stRadio"] div[role="radiogroup"] label p,
         div[data-testid="stRadio"] div[role="radiogroup"] label span {
-
-            font-size: clamp(0.68rem, 3.05vw, 0.9rem) !important;
+            font-size: clamp(0.58rem, 2.45vw, 0.82rem) !important;
             line-height: 1.05 !important;
+            letter-spacing: -0.04em !important;
         }
     }
     </style>
