@@ -77,7 +77,8 @@ except (ModuleNotFoundError, ImportError):
 st.set_page_config(
     page_title="RelationshipPath AI",
     page_icon="💬",
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="expanded"
 )
 
 # -----------------------------
@@ -215,7 +216,7 @@ def render_ai_status_light():
             <div>
                 <div style="font-weight:900;font-size:16px;line-height:1.1;">{label}</div>
                 <div style="font-weight:700;font-size:12px;opacity:0.9;margin-top:3px;">{detail}</div>
-                <div style="font-size:11px;opacity:0.75;margin-top:2px;">Status automatically checks every 5 minutes.</div>
+                <div style="font-size:11px;opacity:0.75;margin-top:2px;">Status rechecks after 5 minutes on the next app action.</div>
             </div>
         </div>
     """
@@ -772,6 +773,86 @@ st.markdown(
         background: #eff6ff;
     }
 
+    /* On phones, Streamlit normally collapses the sidebar behind a menu icon.
+       Force the app navigation to remain visible as a slim fixed left rail. */
+    @media (max-width: 760px) {
+        section[data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
+            transform: translateX(0) !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 112px !important;
+            min-width: 112px !important;
+            max-width: 112px !important;
+            position: fixed !important;
+            z-index: 999999 !important;
+            overflow-y: auto !important;
+            box-shadow: 3px 0 12px rgba(15,23,42,0.12);
+        }
+
+        section[data-testid="stSidebar"] > div,
+        section[data-testid="stSidebar"] .block-container {
+            width: 112px !important;
+            min-width: 112px !important;
+            max-width: 112px !important;
+            padding: 0.55rem 0.35rem 1rem 0.35rem !important;
+        }
+
+        section[data-testid="stSidebar"] h3 {
+            font-size: 0.78rem !important;
+            line-height: 1.05 !important;
+            text-align: center;
+            margin: 0.35rem 0 0.45rem 0 !important;
+        }
+
+        section[data-testid="stSidebar"] div[role="radiogroup"] label {
+            padding: 8px 6px !important;
+            min-height: 42px !important;
+            margin: 5px 0 !important;
+            border-radius: 12px !important;
+            font-size: 0.72rem !important;
+            line-height: 1.05 !important;
+            text-align: center;
+            justify-content: center;
+        }
+
+        section[data-testid="stSidebar"] div[role="radiogroup"] label p {
+            font-size: 0.72rem !important;
+            line-height: 1.05 !important;
+            margin: 0 !important;
+            white-space: normal !important;
+            word-break: normal !important;
+        }
+
+        section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+            font-size: 0.75rem !important;
+        }
+
+        button[kind="header"],
+        button[data-testid="collapsedControl"],
+        div[data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+        }
+
+        .stApp {
+            margin-left: 112px !important;
+        }
+
+        .main .block-container,
+        section.main .block-container,
+        div[data-testid="stAppViewContainer"] .block-container {
+            max-width: calc(100vw - 112px) !important;
+            padding-left: 0.65rem !important;
+            padding-right: 0.65rem !important;
+        }
+
+        h1 {
+            font-size: 1.55rem !important;
+        }
+    }
+
     /* Bigger tap targets for iPhone users. */
     div.stButton > button,
     div.stDownloadButton > button {
@@ -802,8 +883,8 @@ st.markdown(
 
     @media (max-width: 640px) {
         .block-container {
-            padding-left: 0.85rem;
-            padding-right: 0.85rem;
+            padding-left: 0.65rem;
+            padding-right: 0.65rem;
             padding-top: 0.75rem;
         }
 
@@ -845,8 +926,8 @@ if not st.session_state.safety_acknowledged:
 
     st.stop()
 
-# Keep the AI status fresh without requiring the user to click anything.
-st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
+# AI status is cached for 5 minutes, but the page no longer auto-refreshes.
+# It rechecks on normal app reruns after the cache expires.
 
 # -----------------------------
 # Left Sidebar Navigation
