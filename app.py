@@ -819,6 +819,56 @@ st.markdown(
         transform: translateY(1px);
     }
 
+    /* Streamlit widget navigation: smoother than link navigation because it avoids full browser reloads. */
+    div[data-testid="stRadio"] div[role="radiogroup"] {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+        gap: 0.42rem;
+        width: 100%;
+        margin: 0.75rem 0 0.55rem 0;
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 54px;
+        padding: 0.55rem 0.35rem !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(148, 163, 184, 0.38) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: inherit !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        text-align: center;
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+        color: #ffffff !important;
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.28);
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) p,
+    div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) span {
+        color: #ffffff !important;
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-child {
+        display: none !important;
+    }
+
+    div[data-testid="stRadio"] div[role="radiogroup"] label p {
+        font-size: clamp(0.72rem, 2.85vw, 1rem) !important;
+        font-weight: 950 !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.02em !important;
+        text-align: center !important;
+        overflow-wrap: anywhere !important;
+    }
+
     .ai-status-one-line {
         display: inline-flex;
         align-items: center;
@@ -890,6 +940,21 @@ st.markdown(
             padding: 0.42rem 0.18rem;
             font-size: clamp(0.62rem, 2.8vw, 0.82rem);
         }
+
+        div[data-testid="stRadio"] div[role="radiogroup"] {
+            gap: 0.28rem;
+            margin-top: 0.55rem;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"] label {
+            min-height: 48px;
+            border-radius: 13px !important;
+            padding: 0.42rem 0.18rem !important;
+        }
+
+        div[data-testid="stRadio"] div[role="radiogroup"] label p {
+            font-size: clamp(0.62rem, 2.8vw, 0.82rem) !important;
+        }
     }
     </style>
     """,
@@ -940,23 +1005,25 @@ NAV_OPTIONS = {
     "journal": "Journal",
 }
 
-requested_page = get_query_param_value("page", "coach")
+NAV_LABELS = list(NAV_OPTIONS.values())
 
-if requested_page not in NAV_OPTIONS:
-    requested_page = "coach"
+# Use a real Streamlit widget for navigation instead of HTML links.
+# This avoids a full browser page reload on phone and makes page changes feel smoother.
+if "active_page" not in st.session_state:
+    requested_page = get_query_param_value("page", "coach")
+    st.session_state.active_page = NAV_OPTIONS.get(requested_page, "Coach Chat")
 
-page = NAV_OPTIONS[requested_page]
+if st.session_state.active_page not in NAV_LABELS:
+    st.session_state.active_page = "Coach Chat"
 
-nav_html_parts = ['<div class="top-nav-row">']
-for slug, label in NAV_OPTIONS.items():
-    active_class = " active" if slug == requested_page else ""
-    safe_slug = html.escape(slug)
-    safe_label = html.escape(label)
-    nav_html_parts.append(
-        f'<a class="top-nav-button{active_class}" href="?page={safe_slug}&ack=1">{safe_label}</a>'
-    )
-nav_html_parts.append('</div>')
-st.markdown("".join(nav_html_parts), unsafe_allow_html=True)
+page = st.radio(
+    "Main navigation",
+    NAV_LABELS,
+    index=NAV_LABELS.index(st.session_state.active_page),
+    horizontal=True,
+    label_visibility="collapsed",
+    key="active_page",
+)
 
 # Minimal one-line AI status.
 render_ai_status_light()
