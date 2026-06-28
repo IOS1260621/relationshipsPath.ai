@@ -77,7 +77,7 @@ except (ModuleNotFoundError, ImportError):
 st.set_page_config(
     page_title="RelationshipPath AI",
     page_icon="💬",
-    layout="wide"
+    layout="centered"
 )
 
 # -----------------------------
@@ -709,8 +709,163 @@ def export_journal_as_json():
 
 initialize_session_state()
 
+# -----------------------------
+# Phone-first visual polish
+# -----------------------------
+
+st.markdown(
+    """
+    <style>
+    /* Phone-first layout: make the app feel like a mobile product, not a desktop dashboard. */
+    .block-container {
+        max-width: 760px;
+        padding-top: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-bottom: 5rem;
+    }
+
+    h1 {
+        font-size: clamp(2rem, 8vw, 3rem) !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.04em;
+        margin-bottom: 0.25rem !important;
+    }
+
+    h2, h3 {
+        letter-spacing: -0.02em;
+    }
+
+    div[data-testid="stCaptionContainer"] {
+        font-size: 1rem;
+    }
+
+    .mobile-hero {
+        background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 100%);
+        border: 1px solid rgba(15, 23, 42, 0.10);
+        border-radius: 22px;
+        padding: 18px 16px;
+        margin: 10px 0 14px 0;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .mobile-hero-title {
+        font-size: clamp(1.25rem, 5.6vw, 1.8rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1.08;
+        margin-bottom: 8px;
+        letter-spacing: -0.035em;
+    }
+
+    .mobile-hero-text {
+        color: #334155;
+        font-size: 0.98rem;
+        line-height: 1.45;
+        font-weight: 650;
+    }
+
+    .mobile-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .mobile-chip {
+        background: rgba(255,255,255,0.78);
+        border: 1px solid rgba(15,23,42,0.10);
+        color: #0f172a;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    /* Bigger tap targets for iPhone users. */
+    div.stButton > button,
+    div.stDownloadButton > button {
+        width: 100%;
+        min-height: 46px;
+        border-radius: 14px;
+        font-weight: 800;
+    }
+
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="input"] input {
+        border-radius: 14px;
+    }
+
+    div[data-baseweb="textarea"] textarea {
+        font-size: 16px !important; /* Prevents iPhone Safari zoom on focus. */
+        line-height: 1.4 !important;
+    }
+
+    div[data-testid="stChatInput"] textarea {
+        font-size: 16px !important; /* Prevents iPhone Safari zoom on focus. */
+    }
+
+    /* Make tabs easier to swipe/fit on small screens. */
+    div[data-testid="stTabs"] button {
+        min-height: 42px;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    div[data-testid="stTabs"] [role="tablist"] {
+        gap: 4px;
+        overflow-x: auto;
+    }
+
+    .stAlert {
+        border-radius: 16px;
+    }
+
+    @media (max-width: 640px) {
+        .block-container {
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+            padding-top: 0.75rem;
+        }
+
+        .mobile-hero {
+            border-radius: 18px;
+            padding: 15px 14px;
+        }
+
+        div[data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.title(f"💬 {APP_NAME}")
-st.caption("AI relationship coaching for the conversations you do not know how to have.")
+st.caption("Think before you text.")
+
+st.markdown(
+    """
+    <div class="mobile-hero">
+        <div class="mobile-hero-title">AI relationship coaching made for your phone.</div>
+        <div class="mobile-hero-text">
+            Calm down after arguments, rewrite difficult texts, and prepare for hard conversations before you hit send.
+        </div>
+        <div class="mobile-chip-row">
+            <span class="mobile-chip">Rewrite texts</span>
+            <span class="mobile-chip">Conflict help</span>
+            <span class="mobile-chip">Boundaries</span>
+            <span class="mobile-chip">Weekly check-ins</span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Sidebar removed for a cleaner landing page.
 st.session_state.current_modality = MODALITY_NAME
@@ -780,34 +935,22 @@ with tab1:
 
     st.markdown(
         """
-        Use this when you had an argument, feel hurt, need help understanding the situation,
-        or want to prepare for a calmer conversation.
+        Type what happened in one place. The AI will help you slow it down,
+        rewrite the message, and choose one healthier next step.
         """
     )
 
     situation_type = st.selectbox(
-        "What are you here for today?",
+        "What do you need help with?",
         SITUATION_OPTIONS
     )
 
-    st.markdown("### Optional 3-step input")
-    happened_text = st.text_area(
-        "1. What happened",
-        height=90,
-        placeholder="Facts only: what happened, when, and what was said or done."
-    )
-    felt_text = st.text_area(
-        "2. What you felt",
-        height=90,
-        placeholder="Use I feel language, for example: I felt hurt and disconnected."
-    )
-    need_text = st.text_area(
-        "3. What you need",
-        height=90,
-        placeholder="State one clear relationship need or request."
-    )
+    # Removed the optional 3-step input fields for a cleaner phone-first flow.
+    happened_text = ""
+    felt_text = ""
+    need_text = ""
 
-    user_message = st.chat_input("Tell me what happened...")
+    user_message = st.chat_input("Type what happened or paste the text...")
 
     if user_message:
         append_capped_state_list("chat_history", {
@@ -845,8 +988,8 @@ with tab2:
 
     st.markdown(
         """
-        Paste an angry, emotional, confusing, or difficult message.
-        The app will rewrite it into a calmer relationship-focused version.
+        Paste the text you are about to send.
+        The app rewrites it into a calmer, clearer version made for real phone conversations.
         """
     )
 
