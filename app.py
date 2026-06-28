@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import os
 import re
+import html
 
 from openai import OpenAI
 
@@ -19,8 +20,8 @@ try:
         SITUATION_FOCUS,
         REWRITE_TEMPLATES,
     )
-except Exception:
-    # Fallback config so this file can run by itself if relationship_config.py is missing.
+except (ModuleNotFoundError, ImportError):
+    # Fallback config so this file can run by itself if relationship_config.py is missing or incomplete.
     APP_NAME = "RelationshipPath AI"
     MODALITY_NAME = "Relationships"
     MAX_CHAT_MESSAGES = 50
@@ -130,6 +131,95 @@ def get_openai_client():
 
 def has_openai_key():
     return bool(get_secret_or_env("OPENAI_API_KEY", ""))
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def check_openai_availability_cached(model_name, key_present):
+    """Check OpenAI availability at most once every 5 minutes."""
+    checked_at = datetime.now().strftime("%I:%M:%S %p")
+
+    if not key_present:
+        return {
+            "available": False,
+            "label": "AI Offline",
+            "detail": "OPENAI_API_KEY not found.",
+            "checked_at": checked_at,
+        }
+
+    try:
+        client = get_openai_client()
+        if client is None:
+            raise RuntimeError("OpenAI client could not be created.")
+
+        response = client.responses.create(
+            model=model_name,
+            reasoning={"effort": "low"},
+            instructions="You are a connection check. Reply with only: OK",
+            input="Reply with OK.",
+            max_output_tokens=20,
+        )
+        output_text = (response.output_text or "").strip()
+
+        return {
+            "available": True,
+            "label": "AI Available",
+            "detail": f"Model: {model_name}. Last check: {checked_at}.",
+            "checked_at": checked_at,
+            "test_response": output_text,
+        }
+    except Exception as error:
+        return {
+            "available": False,
+            "label": "AI Offline",
+            "detail": f"{type(error).__name__}: {error}",
+            "checked_at": checked_at,
+        }
+
+
+def render_ai_status_light():
+    """Render a simple red/green AI status box on the main page."""
+    status = check_openai_availability_cached(get_openai_model(), has_openai_key())
+    is_available = bool(status.get("available"))
+
+    background = "#dcfce7" if is_available else "#fee2e2"
+    border = "#16a34a" if is_available else "#dc2626"
+    dot = "#22c55e" if is_available else "#ef4444"
+    text = "#14532d" if is_available else "#7f1d1d"
+
+    label = html.escape(str(status.get("label", "AI Status")))
+    detail = html.escape(str(status.get("detail", "")))
+
+    status_html = f"""
+        <div style="
+            display:flex;
+            align-items:center;
+            gap:12px;
+            background:{background};
+            border:2px solid {border};
+            color:{text};
+            border-radius:14px;
+            padding:12px 14px;
+            margin:8px 0 18px 0;
+            max-width:520px;
+            box-shadow:0 4px 14px rgba(15,23,42,0.08);
+        ">
+            <span style="
+                width:18px;
+                height:18px;
+                border-radius:999px;
+                background:{dot};
+                display:inline-block;
+                box-shadow:0 0 0 4px rgba(255,255,255,0.75);
+                flex:0 0 auto;
+            "></span>
+            <div>
+                <div style="font-weight:900;font-size:16px;line-height:1.1;">{label}</div>
+                <div style="font-weight:700;font-size:12px;opacity:0.9;margin-top:3px;">{detail}</div>
+                <div style="font-size:11px;opacity:0.75;margin-top:2px;">Status automatically checks every 5 minutes.</div>
+            </div>
+        </div>
+    """
+    st.markdown(status_html, unsafe_allow_html=True)
 
 
 def call_openai_response(system_prompt, user_prompt, max_output_tokens=900):
@@ -289,14 +379,21 @@ def build_ai_step_outputs(user_input, happened_text, felt_text, need_text):
         need_text,
     )
 
-    if detect_safety_issue(user_input):
+    safety_scope_text = " ".join([
+        user_input.strip(),
+        happened_text.strip(),
+        felt_text.strip(),
+        need_text.strip(),
+    ])
+
+    if detect_safety_issue(safety_scope_text):
         step_4 = (
             "Safety override triggered. The formula detected potential risk language, so coaching is paused and immediate human support is recommended."
         )
         step_5 = "Next step: pause messaging and contact trusted or professional support now."
         return step_4, step_5
 
-    if detect_manipulation_request(user_input):
+    if detect_manipulation_request(safety_scope_text):
         step_4 = (
             "Manipulation override triggered. The formula blocks control/revenge framing and switches to healthy communication only."
         )
@@ -326,12 +423,19 @@ def generate_relationship_coaching_response(
     need_text="",
 ):
     """
-    Rule-based relationship coaching response.
-    This MVP does not use an external LLM yet.
-    Later you can replace this function with an OpenAI API call.
+    OpenAI-powered relationship coaching response.
+    Safety / manipulation / diagnosis checks run before the LLM call.
+    If OpenAI is unavailable, the app falls back to the local rule-based coach.
     """
 
-    if detect_safety_issue(user_input):
+    safety_scope_text = " ".join([
+        user_input.strip(),
+        happened_text.strip(),
+        felt_text.strip(),
+        need_text.strip(),
+    ])
+
+    if detect_safety_issue(safety_scope_text):
         return """
 I’m concerned there may be a safety issue here.
 
@@ -340,7 +444,7 @@ This app is not designed for emergencies, abuse, violence, threats, self-harm, o
 Your immediate safety matters more than resolving the relationship conflict in this chat.
 """
 
-    if detect_manipulation_request(user_input):
+    if detect_manipulation_request(safety_scope_text):
         return """
 I can’t help with manipulation, revenge, spying, emotional control, or trying to force someone to stay.
 
@@ -351,7 +455,7 @@ A better starting point could be:
 “I don’t want to control you or pressure you. I want to understand where we stand and what we both honestly want.”
 """
 
-    if detect_diagnosis_request(user_input):
+    if detect_diagnosis_request(safety_scope_text):
         return """
 I can’t diagnose your partner or label them with a mental-health condition.
 
@@ -512,6 +616,27 @@ Return only the rewritten message, with no long explanation.
 def create_weekly_summary(connection_score, communication_score, trust_score, conflict_score, notes):
     avg_score = round((connection_score + communication_score + trust_score + conflict_score) / 4, 1)
 
+    if detect_safety_issue(notes):
+        return """
+I’m concerned your weekly notes may include safety-related concerns.
+
+This app is not designed for emergencies, abuse, violence, threats, self-harm, or situations where someone may be in danger. Please pause relationship coaching for now and contact emergency services, a trusted person nearby, or a qualified professional support resource.
+"""
+
+    if detect_manipulation_request(notes):
+        return """
+I can’t help with manipulation, revenge, spying, emotional control, or trying to force someone to stay.
+
+A healthier weekly goal is to focus on honesty, respect, boundaries, and what you can control.
+"""
+
+    if detect_diagnosis_request(notes):
+        return """
+I can’t diagnose your partner or label them with a mental-health condition.
+
+For this check-in, focus on observable behavior, how it affected you, and what boundary or request you need.
+"""
+
     llm_prompt = f"""
 Task: Generate an AI weekly relationship check-in summary.
 
@@ -585,71 +710,10 @@ def export_journal_as_json():
 initialize_session_state()
 
 st.title(f"💬 {APP_NAME}")
-st.caption("First modality: Relationships — OpenAI-powered relationship coaching for communication, reflection, and conflict de-escalation.")
+st.caption("AI relationship coaching for the conversations you do not know how to have.")
 
-with st.sidebar:
-    st.header("Modality")
-    st.session_state.current_modality = st.selectbox(
-        "Choose modality",
-        [MODALITY_NAME],
-        index=0
-    )
-
-    st.divider()
-
-    st.header("AI Status")
-    if has_openai_key():
-        st.success(f"OpenAI connected. Model: {get_openai_model()}")
-    else:
-        st.error("OPENAI_API_KEY not found. Add it in Codespaces secrets or Streamlit secrets.")
-
-    if st.button("Test OpenAI Connection"):
-        try:
-            test_text = call_openai_response(
-                "You are a connection test. Reply with one short sentence.",
-                "Say: OpenAI is connected for RelationshipPath AI.",
-                max_output_tokens=60,
-            )
-            st.success(test_text)
-        except Exception as error:
-            st.error(f"OpenAI test failed: {error}")
-
-    st.divider()
-
-    st.header("Important")
-    st.warning(
-        "This app is not therapy, couples therapy, medical care, legal advice, or emergency support."
-    )
-
-    st.markdown(
-        """
-        Use this app for:
-        - communication help
-        - relationship reflection
-        - conflict de-escalation
-        - message rewriting
-        - weekly check-ins
-
-        Do not use this app for:
-        - emergencies
-        - abuse or violence
-        - self-harm
-        - threats
-        - stalking
-        - coercion
-        - diagnosis
-        """
-    )
-
-    st.divider()
-
-    if st.button("Clear Chat"):
-        st.session_state.chat_history = []
-        st.success("Chat cleared.")
-
-    if st.button("Clear Journal"):
-        st.session_state.journal_entries = []
-        st.success("Journal cleared.")
+# Sidebar removed for a cleaner landing page.
+st.session_state.current_modality = MODALITY_NAME
 
 
 # -----------------------------
@@ -676,6 +740,22 @@ if not st.session_state.safety_acknowledged:
         st.rerun()
 
     st.stop()
+
+# Keep the AI status fresh without requiring the user to click anything.
+st.markdown('<meta http-equiv="refresh" content="300">', unsafe_allow_html=True)
+render_ai_status_light()
+
+# Compact main-page session controls, replacing the old sidebar buttons.
+with st.expander("Session controls", expanded=False):
+    col_clear_chat, col_clear_journal = st.columns(2)
+    with col_clear_chat:
+        if st.button("Clear Chat"):
+            st.session_state.chat_history = []
+            st.success("Chat cleared.")
+    with col_clear_journal:
+        if st.button("Clear Journal"):
+            st.session_state.journal_entries = []
+            st.success("Journal cleared.")
 
 
 # -----------------------------
