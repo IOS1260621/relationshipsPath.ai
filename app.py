@@ -78,7 +78,7 @@ st.set_page_config(
     page_title="RelationshipPath AI",
     page_icon="💬",
     layout="centered",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # -----------------------------
@@ -715,17 +715,28 @@ initialize_session_state()
 st.markdown(
     """
     <style>
-    /* Phone-first layout with left navigation. */
+    /* Clean phone-first layout with NO left sidebar rail. */
+    section[data-testid="stSidebar"],
+    button[data-testid="collapsedControl"],
+    div[data-testid="stSidebarCollapsedControl"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .stApp {
+        margin-left: 0 !important;
+    }
+
     .block-container {
-        max-width: 820px;
+        max-width: 760px;
         padding-top: 1rem;
         padding-left: 1rem;
         padding-right: 1rem;
-        padding-bottom: 5rem;
+        padding-bottom: 6rem;
     }
 
     h1 {
-        font-size: clamp(1.9rem, 7vw, 2.8rem) !important;
+        font-size: clamp(1.85rem, 7vw, 2.6rem) !important;
         line-height: 1.05 !important;
         letter-spacing: -0.04em;
         margin-bottom: 0.25rem !important;
@@ -739,123 +750,41 @@ st.markdown(
         font-size: 1rem;
     }
 
-    /* Clean sidebar navigation. */
-    section[data-testid="stSidebar"] {
-        background: #f8fafc;
-        border-right: 1px solid rgba(15, 23, 42, 0.08);
-    }
-
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 1.4rem;
-    }
-
-    section[data-testid="stSidebar"] h1,
-    section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 {
-        font-size: 1.05rem !important;
-        margin-bottom: 0.3rem !important;
+    /* Top navigation replaces the sidebar on phone. */
+    div[role="radiogroup"] {
+        gap: 0.45rem !important;
     }
 
     div[role="radiogroup"] label {
-        border: 1px solid rgba(15,23,42,0.10);
-        border-radius: 14px;
-        padding: 10px 12px;
-        margin: 6px 0;
-        background: #ffffff;
-        min-height: 44px;
-        box-shadow: 0 3px 10px rgba(15,23,42,0.04);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 999px;
+        padding: 0.55rem 0.75rem;
+        margin: 0.15rem 0.1rem;
+        background: rgba(255, 255, 255, 0.08);
+        min-height: 42px;
+        box-shadow: none;
+        color: inherit !important;
+    }
+
+    div[role="radiogroup"] label p {
+        color: inherit !important;
+        opacity: 1 !important;
+        font-size: 0.95rem !important;
+        line-height: 1.15 !important;
+        white-space: normal !important;
     }
 
     div[role="radiogroup"] label:hover {
-        border-color: rgba(37,99,235,0.35);
-        background: #eff6ff;
-    }
-
-    /* On phones, Streamlit normally collapses the sidebar behind a menu icon.
-       Force the app navigation to remain visible as a slim fixed left rail. */
-    @media (max-width: 760px) {
-        section[data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
-            transform: translateX(0) !important;
-            left: 0 !important;
-            top: 0 !important;
-            bottom: 0 !important;
-            width: 112px !important;
-            min-width: 112px !important;
-            max-width: 112px !important;
-            position: fixed !important;
-            z-index: 999999 !important;
-            overflow-y: auto !important;
-            box-shadow: 3px 0 12px rgba(15,23,42,0.12);
-        }
-
-        section[data-testid="stSidebar"] > div,
-        section[data-testid="stSidebar"] .block-container {
-            width: 112px !important;
-            min-width: 112px !important;
-            max-width: 112px !important;
-            padding: 0.55rem 0.35rem 1rem 0.35rem !important;
-        }
-
-        section[data-testid="stSidebar"] h3 {
-            font-size: 0.78rem !important;
-            line-height: 1.05 !important;
-            text-align: center;
-            margin: 0.35rem 0 0.45rem 0 !important;
-        }
-
-        section[data-testid="stSidebar"] div[role="radiogroup"] label {
-            padding: 8px 6px !important;
-            min-height: 42px !important;
-            margin: 5px 0 !important;
-            border-radius: 12px !important;
-            font-size: 0.72rem !important;
-            line-height: 1.05 !important;
-            text-align: center;
-            justify-content: center;
-        }
-
-        section[data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size: 0.72rem !important;
-            line-height: 1.05 !important;
-            margin: 0 !important;
-            white-space: normal !important;
-            word-break: normal !important;
-        }
-
-        section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-            font-size: 0.75rem !important;
-        }
-
-        button[kind="header"],
-        button[data-testid="collapsedControl"],
-        div[data-testid="stSidebarCollapsedControl"] {
-            display: none !important;
-        }
-
-        .stApp {
-            margin-left: 112px !important;
-        }
-
-        .main .block-container,
-        section.main .block-container,
-        div[data-testid="stAppViewContainer"] .block-container {
-            max-width: calc(100vw - 112px) !important;
-            padding-left: 0.65rem !important;
-            padding-right: 0.65rem !important;
-        }
-
-        h1 {
-            font-size: 1.55rem !important;
-        }
+        border-color: rgba(239, 68, 68, 0.55);
+        background: rgba(239, 68, 68, 0.10);
     }
 
     /* Bigger tap targets for iPhone users. */
     div.stButton > button,
-    div.stDownloadButton > button {
+    div.stDownloadButton > button,
+    div[data-testid="stFormSubmitButton"] button {
         width: 100%;
-        min-height: 46px;
+        min-height: 48px;
         border-radius: 14px;
         font-weight: 800;
     }
@@ -866,13 +795,10 @@ st.markdown(
         border-radius: 14px;
     }
 
-    div[data-baseweb="textarea"] textarea {
-        font-size: 16px !important; /* Prevents iPhone Safari zoom on focus. */
-        line-height: 1.4 !important;
-    }
-
+    div[data-baseweb="textarea"] textarea,
     div[data-testid="stChatInput"] textarea {
         font-size: 16px !important; /* Prevents iPhone Safari zoom on focus. */
+        line-height: 1.4 !important;
     }
 
     .stAlert {
@@ -881,14 +807,30 @@ st.markdown(
 
     @media (max-width: 640px) {
         .block-container {
-            padding-left: 0.65rem;
-            padding-right: 0.65rem;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
             padding-top: 0.75rem;
+            max-width: 100vw !important;
         }
 
         div[data-testid="column"] {
             width: 100% !important;
             flex: 1 1 100% !important;
+        }
+
+        div[role="radiogroup"] {
+            display: flex !important;
+            flex-wrap: wrap !important;
+        }
+
+        div[role="radiogroup"] label {
+            min-height: 44px !important;
+            padding: 0.48rem 0.62rem !important;
+            margin: 0.12rem !important;
+        }
+
+        div[role="radiogroup"] label p {
+            font-size: 0.86rem !important;
         }
     }
     </style>
@@ -928,24 +870,23 @@ if not st.session_state.safety_acknowledged:
 # It rechecks on normal app reruns after the cache expires.
 
 # -----------------------------
-# Left Sidebar Navigation
+# Main Navigation — no sidebar on phone
 # -----------------------------
 
 st.session_state.current_modality = MODALITY_NAME
 
-with st.sidebar:
-    st.markdown("### RelationshipPath AI")
-    page = st.radio(
-        "Menu",
-        [
-            "Coach Chat",
-            "Say It For Me",
-            "Check-In",
-            "Journal",
-            "About/Safety",
-        ],
-        label_visibility="collapsed",
-    )
+page = st.radio(
+    "Choose a tool",
+    [
+        "Coach Chat",
+        "Say It For Me",
+        "Check-In",
+        "Journal",
+        "About/Safety",
+    ],
+    horizontal=True,
+    key="main_page_nav",
+)
 
 # AI status stays on the main page as a simple light box.
 render_ai_status_light()
@@ -1030,26 +971,35 @@ elif page == "Say It For Me":
         """
     )
 
-    original_message = st.text_area(
-        "Original message",
-        height=160,
-        placeholder="Paste your message here..."
-    )
+    if "last_rewrite_output" not in st.session_state:
+        st.session_state.last_rewrite_output = ""
 
-    rewrite_style = st.radio(
-        "Rewrite style",
-        ["Calm", "Loving", "Boundary", "Apology", "Short Text"],
-        horizontal=True
-    )
+    with st.form("say_it_for_me_form", clear_on_submit=False):
+        original_message = st.text_area(
+            "Original message",
+            height=180,
+            placeholder="Paste your message here..."
+        )
 
-    if st.button("Say It For Me"):
-        rewritten = rewrite_message(original_message, rewrite_style)
+        rewrite_style = st.radio(
+            "Rewrite style",
+            ["Calm", "Loving", "Boundary", "Apology", "Short Text"],
+            horizontal=True,
+            key="rewrite_style_choice",
+        )
+
+        submitted_rewrite = st.form_submit_button("Say It For Me")
+
+    if submitted_rewrite:
+        st.session_state.last_rewrite_output = rewrite_message(original_message, rewrite_style)
+
+    if st.session_state.last_rewrite_output:
         st.subheader("Suggested Message")
-        st.markdown(rewritten)
+        st.markdown(st.session_state.last_rewrite_output)
 
         st.download_button(
             label="Download suggested message",
-            data=rewritten,
+            data=st.session_state.last_rewrite_output,
             file_name="relationship_message_rewrite.txt",
             mime="text/plain"
         )
