@@ -472,18 +472,14 @@ A healthy script could be:
 “When this happens, I feel hurt and disconnected. I’m not trying to label you. I want to talk about the behavior and how we can handle it differently.”
 """
 
-    ai_step_4, ai_step_5 = build_ai_step_outputs(user_input, happened_text, felt_text, need_text)
+    _hidden_formula_check, ai_next_step = build_ai_step_outputs(user_input, happened_text, felt_text, need_text)
+    ai_next_step = ai_next_step.replace("Formula-based next step: ", "").strip()
 
     llm_prompt = f"""
 Task: Relationship coach chat response.
 
 Situation type:
 {situation_type}
-
-Optional structured input:
-1. What happened: {happened_text or "Not provided"}
-2. What the user felt: {felt_text or "Not provided"}
-3. What the user needs: {need_text or "Not provided"}
 
 Recent chat context:
 {build_recent_chat_context()}
@@ -496,18 +492,19 @@ Create a response with this structure:
 Name the likely feeling without overclaiming.
 
 ### Slow it down
-Separate facts, feelings, and needs.
+Separate facts, feelings, and needs in natural language.
 
-### Calmer message draft
+### Say it for me
 Give one copy-ready message the user could send.
 
-### AI formula check
-Use this formula output from the app: {ai_step_4}
-
 ### Next step
-Use or improve this next step from the app: {ai_step_5}
+Give one realistic next step. Internal suggestion you may use if helpful: {ai_next_step}
 
-Keep it practical, not clinical.
+Important:
+- Do not show formulas.
+- Do not show scores.
+- Do not mention clarity score, intensity score, structure points, trigger hits, or AI formula check.
+- Keep it practical, human, and not clinical.
 """
 
     try:
@@ -539,6 +536,9 @@ Keep it practical, not clinical.
                 "When we talked earlier, I felt hurt and unheard. Can we take a few minutes to talk calmly and each explain what we were feeling?"
             )
 
+        _hidden_formula_check, ai_next_step = build_ai_step_outputs(user_input, happened_text, felt_text, need_text)
+        ai_next_step = ai_next_step.replace("Formula-based next step: ", "").strip()
+
         return f"""
 ⚠️ **AI fallback mode:** OpenAI did not respond, so the app used its built-in rule-based coach.
 
@@ -549,22 +549,20 @@ It sounds like you may be feeling **{emotion}**.
 ### Focus for this session
 {situation_focus}
 
-### 1. What happened
+### What happened
 {happened_line}
 
-### 2. What you felt
+### What you felt
 {felt_line}
 
-### 3. What you need
+### What you need
 {need_line}
 
-### 4. Calmer draft
+### Say it for me
 "{scripted_message}"
 
-{ai_step_4}
-
-### 5. Next step
-{ai_step_5}
+### Next step
+{ai_next_step}
 """
 
 
