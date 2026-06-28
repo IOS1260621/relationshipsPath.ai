@@ -178,46 +178,18 @@ def check_openai_availability_cached(model_name, key_present):
 
 
 def render_ai_status_light():
-    """Render a simple red/green AI status box on the main page."""
+    """Render a one-line AI status indicator: AI + green/red dot."""
     status = check_openai_availability_cached(get_openai_model(), has_openai_key())
     is_available = bool(status.get("available"))
 
-    background = "#dcfce7" if is_available else "#fee2e2"
-    border = "#16a34a" if is_available else "#dc2626"
     dot = "#22c55e" if is_available else "#ef4444"
-    text = "#14532d" if is_available else "#7f1d1d"
-
-    label = html.escape(str(status.get("label", "AI Status")))
-    detail = html.escape(str(status.get("detail", "")))
+    ring = "rgba(34, 197, 94, 0.22)" if is_available else "rgba(239, 68, 68, 0.22)"
+    label = "Connected" if is_available else "Offline"
 
     status_html = f"""
-        <div style="
-            display:flex;
-            align-items:center;
-            gap:12px;
-            background:{background};
-            border:2px solid {border};
-            color:{text};
-            border-radius:14px;
-            padding:12px 14px;
-            margin:8px 0 18px 0;
-            max-width:520px;
-            box-shadow:0 4px 14px rgba(15,23,42,0.08);
-        ">
-            <span style="
-                width:18px;
-                height:18px;
-                border-radius:999px;
-                background:{dot};
-                display:inline-block;
-                box-shadow:0 0 0 4px rgba(255,255,255,0.75);
-                flex:0 0 auto;
-            "></span>
-            <div>
-                <div style="font-weight:900;font-size:16px;line-height:1.1;">{label}</div>
-                <div style="font-weight:700;font-size:12px;opacity:0.9;margin-top:3px;">{detail}</div>
-                <div style="font-size:11px;opacity:0.75;margin-top:2px;">Status rechecks after 5 minutes on the next app action.</div>
-            </div>
+        <div class="ai-status-one-line" title="AI {label}">
+            <span class="ai-status-text">AI</span>
+            <span class="ai-status-dot" style="background:{dot}; box-shadow:0 0 0 5px {ring};"></span>
         </div>
     """
     st.markdown(status_html, unsafe_allow_html=True)
@@ -715,7 +687,7 @@ initialize_session_state()
 st.markdown(
     """
     <style>
-    /* Clean phone-first layout with NO left sidebar rail. */
+    /* Clean phone-first layout with no sidebar. */
     section[data-testid="stSidebar"],
     button[data-testid="collapsedControl"],
     div[data-testid="stSidebarCollapsedControl"] {
@@ -729,14 +701,14 @@ st.markdown(
 
     .block-container {
         max-width: 760px;
-        padding-top: 1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
         padding-bottom: 6rem;
     }
 
     h1 {
-        font-size: clamp(1.85rem, 7vw, 2.6rem) !important;
+        font-size: clamp(1.75rem, 7vw, 2.45rem) !important;
         line-height: 1.05 !important;
         letter-spacing: -0.04em;
         margin-bottom: 0.25rem !important;
@@ -750,33 +722,72 @@ st.markdown(
         font-size: 1rem;
     }
 
-    /* Top navigation replaces the sidebar on phone. */
-    div[role="radiogroup"] {
-        gap: 0.45rem !important;
+    /* Four-button top nav. */
+    .top-nav-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.42rem;
+        margin: 0.75rem 0 0.55rem 0;
+        width: 100%;
     }
 
-    div[role="radiogroup"] label {
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 999px;
-        padding: 0.55rem 0.75rem;
-        margin: 0.15rem 0.1rem;
+    .top-nav-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0.55rem 0.35rem;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.38);
         background: rgba(255, 255, 255, 0.08);
-        min-height: 42px;
-        box-shadow: none;
         color: inherit !important;
+        text-decoration: none !important;
+        font-size: clamp(0.72rem, 2.85vw, 1rem);
+        font-weight: 950;
+        line-height: 1.05;
+        text-align: center;
+        letter-spacing: -0.02em;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        overflow-wrap: anywhere;
     }
 
-    div[role="radiogroup"] label p {
-        color: inherit !important;
-        opacity: 1 !important;
-        font-size: 0.95rem !important;
-        line-height: 1.15 !important;
-        white-space: normal !important;
+    .top-nav-button.active {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: #ffffff !important;
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.28);
     }
 
-    div[role="radiogroup"] label:hover {
-        border-color: rgba(239, 68, 68, 0.55);
-        background: rgba(239, 68, 68, 0.10);
+    .top-nav-button:active {
+        transform: translateY(1px);
+    }
+
+    .ai-status-one-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin: 0.15rem 0 1rem 0;
+        padding: 0.35rem 0.58rem;
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        line-height: 1;
+    }
+
+    .ai-status-text {
+        font-size: 0.9rem;
+        font-weight: 950;
+        letter-spacing: 0.02em;
+    }
+
+    .ai-status-dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        display: inline-block;
+        border-radius: 999px;
+        flex: 0 0 auto;
     }
 
     /* Bigger tap targets for iPhone users. */
@@ -807,30 +818,22 @@ st.markdown(
 
     @media (max-width: 640px) {
         .block-container {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-            padding-top: 0.75rem;
+            padding-left: 0.65rem;
+            padding-right: 0.65rem;
+            padding-top: 0.65rem;
             max-width: 100vw !important;
         }
 
-        div[data-testid="column"] {
-            width: 100% !important;
-            flex: 1 1 100% !important;
+        .top-nav-row {
+            gap: 0.28rem;
+            margin-top: 0.55rem;
         }
 
-        div[role="radiogroup"] {
-            display: flex !important;
-            flex-wrap: wrap !important;
-        }
-
-        div[role="radiogroup"] label {
-            min-height: 44px !important;
-            padding: 0.48rem 0.62rem !important;
-            margin: 0.12rem !important;
-        }
-
-        div[role="radiogroup"] label p {
-            font-size: 0.86rem !important;
+        .top-nav-button {
+            min-height: 48px;
+            border-radius: 13px;
+            padding: 0.42rem 0.18rem;
+            font-size: clamp(0.62rem, 2.8vw, 0.82rem);
         }
     }
     </style>
@@ -875,33 +878,39 @@ if not st.session_state.safety_acknowledged:
 
 st.session_state.current_modality = MODALITY_NAME
 
-page = st.radio(
-    "Choose a tool",
-    [
-        "Coach Chat",
-        "Say It For Me",
-        "Check-In",
-        "Journal",
-        "About/Safety",
-    ],
-    horizontal=True,
-    key="main_page_nav",
-)
+NAV_OPTIONS = {
+    "coach": "Coach Chat",
+    "say": "Say It For Me",
+    "check": "Check-In",
+    "journal": "Journal",
+}
 
-# AI status stays on the main page as a simple light box.
+try:
+    requested_page = st.query_params.get("page", "coach")
+except Exception:
+    requested_page = "coach"
+
+if isinstance(requested_page, list):
+    requested_page = requested_page[0] if requested_page else "coach"
+
+if requested_page not in NAV_OPTIONS:
+    requested_page = "coach"
+
+page = NAV_OPTIONS[requested_page]
+
+nav_html_parts = ['<div class="top-nav-row">']
+for slug, label in NAV_OPTIONS.items():
+    active_class = " active" if slug == requested_page else ""
+    safe_slug = html.escape(slug)
+    safe_label = html.escape(label)
+    nav_html_parts.append(
+        f'<a class="top-nav-button{active_class}" href="?page={safe_slug}">{safe_label}</a>'
+    )
+nav_html_parts.append('</div>')
+st.markdown("".join(nav_html_parts), unsafe_allow_html=True)
+
+# Minimal one-line AI status.
 render_ai_status_light()
-
-# Compact main-page session controls.
-with st.expander("Session controls", expanded=False):
-    col_clear_chat, col_clear_journal = st.columns(2)
-    with col_clear_chat:
-        if st.button("Clear Chat"):
-            st.session_state.chat_history = []
-            st.success("Chat cleared.")
-    with col_clear_journal:
-        if st.button("Clear Journal"):
-            st.session_state.journal_entries = []
-            st.success("Journal cleared.")
 
 
 # -----------------------------
@@ -1117,77 +1126,4 @@ elif page == "Journal":
         )
 
 
-# -----------------------------
-# Page 5: About/Safety
-# -----------------------------
-
-elif page == "About/Safety":
-    st.header("About/Safety")
-
-    st.markdown(
-        """
-        **RelationshipPath AI** is an early MVP for an AI relationship-coaching app.
-
-        It helps users:
-        - slow down emotional conflict
-        - rewrite difficult messages
-        - prepare for conversations
-        - reflect on relationship patterns
-        - set healthier boundaries
-        - do relationship check-ins
-
-        It does **not** provide:
-        - licensed therapy
-        - couples therapy
-        - medical diagnosis
-        - psychiatric care
-        - legal advice
-        - emergency support
-        """
-    )
-
-    st.subheader("Safety Policy")
-
-    st.markdown(
-        """
-        The app should redirect instead of coaching when the user describes:
-
-        - immediate danger
-        - domestic violence
-        - threats
-        - coercion
-        - stalking
-        - self-harm
-        - harm to others
-        - weapon involvement
-        - manipulation requests
-        - revenge requests
-        - attempts to control a partner
-
-        The app should also avoid diagnosing partners.
-        Instead of saying:
-
-        > “Your partner is a narcissist.”
-
-        It should say:
-
-        > “That behavior sounds painful and possibly unhealthy. Let’s focus on what happened, how it affected you, and what boundary you may need.”
-        """
-    )
-
-    st.subheader("Future Upgrade Path")
-
-    st.markdown(
-        """
-        Version 2 can add:
-        - user login
-        - saved journal database
-        - couples mode
-        - two-person shared check-ins
-        - relationship pattern dashboard
-        - therapist referral directory
-        - human coach escalation
-        - privacy controls
-        - delete-my-data button
-        """
-    )
+# About/Safety page removed from the public navigation.
