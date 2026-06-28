@@ -1,20 +1,71 @@
 import streamlit as st
 from datetime import datetime
 import json
+import os
 import re
 
-from relationship_config import (
-    APP_NAME,
-    MODALITY_NAME,
-    MAX_CHAT_MESSAGES,
-    MAX_JOURNAL_ENTRIES,
-    SAFETY_KEYWORDS,
-    MANIPULATION_KEYWORDS,
-    DIAGNOSIS_KEYWORDS,
-    SITUATION_OPTIONS,
-    SITUATION_FOCUS,
-    REWRITE_TEMPLATES,
-)
+from openai import OpenAI
+
+try:
+    from relationship_config import (
+        APP_NAME,
+        MODALITY_NAME,
+        MAX_CHAT_MESSAGES,
+        MAX_JOURNAL_ENTRIES,
+        SAFETY_KEYWORDS,
+        MANIPULATION_KEYWORDS,
+        DIAGNOSIS_KEYWORDS,
+        SITUATION_OPTIONS,
+        SITUATION_FOCUS,
+        REWRITE_TEMPLATES,
+    )
+except Exception:
+    # Fallback config so this file can run by itself if relationship_config.py is missing.
+    APP_NAME = "RelationshipPath AI"
+    MODALITY_NAME = "Relationships"
+    MAX_CHAT_MESSAGES = 50
+    MAX_JOURNAL_ENTRIES = 100
+    SAFETY_KEYWORDS = [
+        "suicide", "kill myself", "end my life", "self harm", "self-harm",
+        "hurt myself", "hurt her", "hurt him", "hurt them", "kill her", "kill him",
+        "violence", "hit me", "hit her", "hit him", "choked", "strangled",
+        "threatened", "threat", "weapon", "gun", "knife",
+        "abuse", "abusive", "domestic violence", "scared of him", "scared of her",
+        "stalking", "stalk", "unsafe", "danger", "emergency"
+    ]
+    MANIPULATION_KEYWORDS = [
+        "make them jealous", "force them", "control them", "manipulate", "revenge",
+        "spy", "stalk", "track them", "make them stay", "gaslight", "punish them"
+    ]
+    DIAGNOSIS_KEYWORDS = [
+        "narcissist", "bipolar", "borderline", "psychopath", "sociopath",
+        "diagnose", "mental disorder", "personality disorder"
+    ]
+    SITUATION_OPTIONS = [
+        "Argument or conflict",
+        "Rewrite a difficult text",
+        "Apology",
+        "Boundary",
+        "Trust repair",
+        "Prepare for a hard conversation",
+        "Understand a pattern",
+    ]
+    SITUATION_FOCUS = {
+        "Argument or conflict": "Lower emotional intensity and turn the argument into one calm conversation.",
+        "Rewrite a difficult text": "Make the message clearer, calmer, and harder to misread.",
+        "Apology": "Take responsibility without over-explaining or demanding forgiveness.",
+        "Boundary": "State one clear boundary without threats, punishment, or control.",
+        "Trust repair": "Name the hurt, clarify the repair action, and avoid rushing trust.",
+        "Prepare for a hard conversation": "Prepare one point, one feeling, and one request before the conversation.",
+        "Understand a pattern": "Focus on repeated behaviors, triggers, and healthier choices you can control.",
+    }
+    REWRITE_TEMPLATES = {
+        "Calm": "I want to say this more calmly: {base}",
+        "Loving": "I care about us, and I want to say this with love: {base}",
+        "Boundary": "I want to be clear about my boundary: {base}",
+        "Apology": "I want to take responsibility and apologize: {base}",
+        "Short Text": "Short version: {base}",
+    }
 
 # ============================================================
 # RelationshipPath AI - MVP
@@ -50,6 +101,90 @@ def append_capped_state_list(state_key, item, max_items):
     st.session_state[state_key].append(item)
     if len(st.session_state[state_key]) > max_items:
         st.session_state[state_key] = st.session_state[state_key][-max_items:]
+
+
+# -----------------------------
+# OpenAI / LLM Helpers
+# -----------------------------
+
+def get_secret_or_env(name, default=""):
+    """Read a value from Streamlit secrets first, then environment variables."""
+    try:
+        if name in st.secrets and st.secrets[name]:
+            return str(st.secrets[name])
+    except Exception:
+        pass
+    return os.environ.get(name, default)
+
+
+def get_openai_model():
+    return get_secret_or_env("OPENAI_MODEL", "gpt-5.4-mini")
+
+
+def get_openai_client():
+    api_key = get_secret_or_env("OPENAI_API_KEY", "")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
+
+
+def has_openai_key():
+    return bool(get_secret_or_env("OPENAI_API_KEY", ""))
+
+
+def call_openai_response(system_prompt, user_prompt, max_output_tokens=900):
+    """Call OpenAI Responses API and return text. Raises errors to the caller."""
+    client = get_openai_client()
+    if client is None:
+        raise RuntimeError(
+            "OPENAI_API_KEY was not found. Add it as a Codespaces secret, environment variable, "
+            "or Streamlit secret before using AI mode."
+        )
+
+    response = client.responses.create(
+        model=get_openai_model(),
+        reasoning={"effort": "low"},
+        instructions=system_prompt,
+        input=user_prompt,
+        max_output_tokens=max_output_tokens,
+    )
+
+    return (response.output_text or "").strip()
+
+
+def relationship_system_prompt():
+    return f"""
+You are {APP_NAME}, an AI relationship coach for the {MODALITY_NAME} modality.
+
+Positioning:
+- You are AI relationship coaching, not licensed therapy.
+- Do not present yourself as a therapist, clinician, doctor, lawyer, crisis line, or emergency service.
+- Do not diagnose the user, their partner, or anyone else.
+
+Safety rules:
+- If the user describes immediate danger, abuse, violence, threats, self-harm, harm to others, stalking, coercion, or weapon involvement, pause coaching and recommend immediate human support, emergency services, or a trusted person nearby.
+- Do not help with manipulation, revenge, spying, coercion, emotional control, or forcing someone to stay. Redirect to honesty, boundaries, and respectful communication.
+- Avoid legal or medical advice.
+
+Coaching style:
+- Warm, clear, practical, and emotionally intelligent.
+- Help users think before they text.
+- Turn arguments into conversations.
+- Use short sections and give the user something immediately usable.
+- When helpful, include a message draft the user can copy.
+- End with one realistic next step.
+"""
+
+
+def build_recent_chat_context(limit=6):
+    messages = st.session_state.get("chat_history", [])[-limit:]
+    lines = []
+    for msg in messages:
+        role = msg.get("role", "unknown")
+        content = str(msg.get("content", "")).strip()
+        if content:
+            lines.append(f"{role.upper()}: {content[:1200]}")
+    return "\n\n".join(lines)
 
 
 def normalize_text(text):
@@ -232,40 +367,82 @@ A healthy script could be:
 “When this happens, I feel hurt and disconnected. I’m not trying to label you. I want to talk about the behavior and how we can handle it differently.”
 """
 
-    emotion = simple_emotion_guess(user_input)
-    situation_focus = SITUATION_FOCUS.get(
-        situation_type,
-        "Focus on one specific recent moment and what you want to communicate calmly."
-    )
-
-    happened_value = happened_text.strip()
-    felt_value = felt_text.strip()
-    need_value = need_text.strip()
-
-    happened_line = happened_value if happened_value else "Describe only the facts, without blame."
-    felt_line = felt_value if felt_value else "Use I feel language instead of you always language."
-    need_line = need_value if need_value else "Be specific about the relationship need."
-
-    if happened_value or felt_value or need_value:
-        scripted_message = (
-            f"I want to share this calmly. {happened_line} I felt {felt_line if felt_value else 'emotionally affected by this'}. "
-            f"What I need is {need_line if need_value else 'a calmer conversation where both sides feel heard'}."
-        )
-    else:
-        scripted_message = (
-            "Hey, I do not want us to keep arguing. I care about us, and I want to understand each other better. "
-            "When we talked earlier, I felt hurt and unheard. Can we take a few minutes to talk calmly and each explain what we were feeling?"
-        )
-
     ai_step_4, ai_step_5 = build_ai_step_outputs(user_input, happened_text, felt_text, need_text)
 
-    response = f"""
+    llm_prompt = f"""
+Task: Relationship coach chat response.
+
+Situation type:
+{situation_type}
+
+Optional structured input:
+1. What happened: {happened_text or "Not provided"}
+2. What the user felt: {felt_text or "Not provided"}
+3. What the user needs: {need_text or "Not provided"}
+
+Recent chat context:
+{build_recent_chat_context()}
+
+Current user message:
+{user_input}
+
+Create a response with this structure:
+### What I hear
+Name the likely feeling without overclaiming.
+
+### Slow it down
+Separate facts, feelings, and needs.
+
+### Calmer message draft
+Give one copy-ready message the user could send.
+
+### AI formula check
+Use this formula output from the app: {ai_step_4}
+
+### Next step
+Use or improve this next step from the app: {ai_step_5}
+
+Keep it practical, not clinical.
+"""
+
+    try:
+        return call_openai_response(relationship_system_prompt(), llm_prompt)
+    except Exception as error:
+        # Safe fallback: if OpenAI is unavailable, use the original local MVP logic.
+        emotion = simple_emotion_guess(user_input)
+        situation_focus = SITUATION_FOCUS.get(
+            situation_type,
+            "Focus on one specific recent moment and what you want to communicate calmly."
+        )
+
+        happened_value = happened_text.strip()
+        felt_value = felt_text.strip()
+        need_value = need_text.strip()
+
+        happened_line = happened_value if happened_value else "Describe only the facts, without blame."
+        felt_line = felt_value if felt_value else "Use I feel language instead of you always language."
+        need_line = need_value if need_value else "Be specific about the relationship need."
+
+        if happened_value or felt_value or need_value:
+            scripted_message = (
+                f"I want to share this calmly. {happened_line} I felt {felt_line if felt_value else 'emotionally affected by this'}. "
+                f"What I need is {need_line if need_value else 'a calmer conversation where both sides feel heard'}."
+            )
+        else:
+            scripted_message = (
+                "Hey, I do not want us to keep arguing. I care about us, and I want to understand each other better. "
+                "When we talked earlier, I felt hurt and unheard. Can we take a few minutes to talk calmly and each explain what we were feeling?"
+            )
+
+        return f"""
+⚠️ **AI fallback mode:** OpenAI did not respond, so the app used its built-in rule-based coach.
+
+Technical note: `{error}`
+
 It sounds like you may be feeling **{emotion}**.
 
 ### Focus for this session
 {situation_focus}
-
-Let’s slow it down and separate the situation into four parts:
 
 ### 1. What happened
 {happened_line}
@@ -276,18 +453,14 @@ Let’s slow it down and separate the situation into four parts:
 ### 3. What you need
 {need_line}
 
-### 4. AI-calculated message formula
-Based on your inputs, here is a calmer draft:
-
+### 4. Calmer draft
 "{scripted_message}"
 
 {ai_step_4}
 
-### 5. AI-calculated next step
+### 5. Next step
 {ai_step_5}
 """
-
-    return response
 
 
 def rewrite_message(original_message, style):
@@ -310,24 +483,73 @@ A healthier version would be:
 
     base = original_message.strip()
 
-    template = REWRITE_TEMPLATES.get(style)
-    if template:
-        return template.format(base=base)
+    llm_prompt = f"""
+Task: Rewrite a relationship message.
 
-    return base
+Rewrite style: {style}
+
+Original message:
+{base}
+
+Create a copy-ready rewritten version. Requirements:
+- Keep the user's core meaning.
+- Make it calmer, clearer, and relationship-focused.
+- Do not add threats, diagnosis, manipulation, or guilt pressure.
+- For Boundary style, state one clear boundary and one respectful next step.
+- For Apology style, include responsibility without begging or demanding forgiveness.
+- For Short Text style, make it text-message length.
+Return only the rewritten message, with no long explanation.
+"""
+
+    try:
+        return call_openai_response(relationship_system_prompt(), llm_prompt, max_output_tokens=350)
+    except Exception as error:
+        template = REWRITE_TEMPLATES.get(style)
+        fallback = template.format(base=base) if template else base
+        return f"⚠️ AI fallback mode: `{error}`\n\n{fallback}"
 
 
 def create_weekly_summary(connection_score, communication_score, trust_score, conflict_score, notes):
     avg_score = round((connection_score + communication_score + trust_score + conflict_score) / 4, 1)
 
-    if avg_score >= 8:
-        tone = "Your relationship check-in looks strong this week."
-    elif avg_score >= 5:
-        tone = "Your relationship check-in looks mixed. There may be some strengths and some areas needing attention."
-    else:
-        tone = "Your relationship check-in suggests this may be a difficult week emotionally."
+    llm_prompt = f"""
+Task: Generate an AI weekly relationship check-in summary.
 
-    summary = f"""
+Scores, 1 to 10:
+- Connection: {connection_score}
+- Communication: {communication_score}
+- Trust: {trust_score}
+- Conflict handling: {conflict_score}
+- Average score: {avg_score}
+
+User notes:
+{notes if notes.strip() else "No additional notes provided."}
+
+Create a helpful weekly check-in summary with:
+1. Overall read of the week
+2. Strengths
+3. Main risk area
+4. One calm conversation to have
+5. A copy-ready starter message
+
+Do not diagnose. Do not call this therapy. Keep it practical and relationship-coaching focused.
+"""
+
+    try:
+        return call_openai_response(relationship_system_prompt(), llm_prompt, max_output_tokens=700)
+    except Exception as error:
+        if avg_score >= 8:
+            tone = "Your relationship check-in looks strong this week."
+        elif avg_score >= 5:
+            tone = "Your relationship check-in looks mixed. There may be some strengths and some areas needing attention."
+        else:
+            tone = "Your relationship check-in suggests this may be a difficult week emotionally."
+
+        return f"""
+⚠️ **AI fallback mode:** OpenAI did not respond, so the app used its built-in weekly summary.
+
+Technical note: `{error}`
+
 ## Weekly Relationship Check-In Summary
 
 **Average score:** {avg_score}/10
@@ -350,7 +572,6 @@ A useful starter:
 
 “Can we check in for 10 minutes this week? I don’t want to argue. I just want us to understand each other better.”
 """
-    return summary
 
 
 def export_journal_as_json():
@@ -364,7 +585,7 @@ def export_journal_as_json():
 initialize_session_state()
 
 st.title(f"💬 {APP_NAME}")
-st.caption("First modality: Relationships — AI relationship coaching for communication, reflection, and conflict de-escalation.")
+st.caption("First modality: Relationships — OpenAI-powered relationship coaching for communication, reflection, and conflict de-escalation.")
 
 with st.sidebar:
     st.header("Modality")
@@ -373,6 +594,25 @@ with st.sidebar:
         [MODALITY_NAME],
         index=0
     )
+
+    st.divider()
+
+    st.header("AI Status")
+    if has_openai_key():
+        st.success(f"OpenAI connected. Model: {get_openai_model()}")
+    else:
+        st.error("OPENAI_API_KEY not found. Add it in Codespaces secrets or Streamlit secrets.")
+
+    if st.button("Test OpenAI Connection"):
+        try:
+            test_text = call_openai_response(
+                "You are a connection test. Reply with one short sentence.",
+                "Say: OpenAI is connected for RelationshipPath AI.",
+                max_output_tokens=60,
+            )
+            st.success(test_text)
+        except Exception as error:
+            st.error(f"OpenAI test failed: {error}")
 
     st.divider()
 
@@ -730,7 +970,6 @@ with tab5:
     st.markdown(
         """
         Version 2 can add:
-        - real AI API responses
         - user login
         - saved journal database
         - couples mode
